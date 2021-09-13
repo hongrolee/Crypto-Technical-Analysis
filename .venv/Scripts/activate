@@ -37,7 +37,7 @@ deactivate () {
 # unset irrelevant variables
 deactivate nondestructive
 
-VIRTUAL_ENV="C:\Users\MAYA\VSCode Projects\.venv"
+VIRTUAL_ENV="C:\Users\MAYA\VSCode Projects\Crypto-Technical-Analysis\.venv"
 export VIRTUAL_ENV
 
 _OLD_VIRTUAL_PATH="$PATH"
