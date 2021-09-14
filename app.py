@@ -3,7 +3,7 @@ from flask import Flask, render_template
 from flask_bootstrap import Bootstrap
 
 from views import Chart_Manager
-from models import API_BITHUMB
+from models import API_BITHUMB, patterns
 from process import Technical_Indicator, BackTesting
 from models.API_UPBIT import Quotation
 
@@ -21,41 +21,13 @@ bootstrap = Bootstrap(app)
 def index():
     return render_template('index.html')
 
-@app.route('/one_chart')
-def one_chart():   
-    # UPBIT
-    ticker="KRW-DOGE"
-    data = Quotation.get_ohlcv(ticker, interval="day", count=200, to=None)    
-    fig = Chart_Manager.get_candlestick_one_chart_with_volume(data, "Cripto Chart")
-    fig = Chart_Manager.get_candlestick_one_chart(data, ticker)
-    return _render_result(fig)
-
-@app.route('/tab_chart')
-def tab_chart():  
-    # UPBIT
-    data1 = Quotation.get_ohlcv("KRW-BTC", interval="day", count=200, to=None)
-    data2 = Quotation.get_ohlcv("KRW-DOGE", interval="day", count=200, to=None)
-    fig = Chart_Manager.get_candlestick_one_chart_with_volume([data1, data2], ["BTC", "DOGE"], "Cripto Chart")
-    return _render_result(fig)
-
-@app.route('/table_chart')
-def table_chart():  
-    data = dict(
-        dates=[date(2014, 3, i+1) for i in range(20)],
-        downloads=[randint(0, 100) for i in range(20)],
-    )
-    source = ColumnDataSource(data)
-
-    columns = [
-        TableColumn(field="dates", title="Date", formatter=DateFormatter()),
-        TableColumn(field="downloads", title="Downloads"),
-    ]
-    data_table = DataTable(source=source, columns=columns, width=800, height=280)
-    return _render_result(data_table)
+@app.route('/recommend_pattern')
+def recommend_pattern():
+    return render_template('recommend_pattern.html', patterns=patterns)
 
 @app.route('/backtesting')
 def backtesting():   
-    ticker = 'ETH'
+    ticker = 'DOGE'
     period_list= ['1h','6h','12h','24h']
     final_param = [0, 0, 0, 0, 0, 0]
     매수방법 = ["RSI"]
@@ -98,8 +70,42 @@ def backtesting():
         arrow_list.append(매매결과)
         print("<시작날짜 : {0},  {1}기간, {2}봉 백테스팅 결과> {3}만원 투자시 예상수익 : {4}원, 예상수익률 : {5}%, 거래횟수 : {6} ".format(df['date'].iloc[0], period, len(df), int(invest / 10000),format(int(수익금), ","),format(수익률, '.2f'), 거래횟수))
 
-    fig = Chart_Manager.show_candlestick_tab_chart(coins_list, period_list, "a.html", ticker, arrow_list)
+    fig = Chart_Manager.get_candlestick_tab_chart(coins_list, period_list, "a.html", ticker, arrow_list)
     return _render_result(fig)
+
+
+@app.route('/one_chart')
+def one_chart():   
+    # UPBIT
+    ticker="KRW-DOGE"
+    data = Quotation.get_ohlcv(ticker, interval="day", count=200, to=None)    
+    fig = Chart_Manager.get_candlestick_one_chart_with_volume(data, "Cripto Chart")
+    fig = Chart_Manager.get_candlestick_one_chart(data, ticker)
+    return _render_result(fig)
+
+@app.route('/tab_chart')
+def tab_chart():  
+    # UPBIT
+    data1 = Quotation.get_ohlcv("KRW-BTC", interval="day", count=200, to=None)
+    data2 = Quotation.get_ohlcv("KRW-DOGE", interval="day", count=200, to=None)
+    fig = Chart_Manager.get_candlestick_one_chart_with_volume([data1, data2], ["BTC", "DOGE"], "Cripto Chart")
+    return _render_result(fig)
+
+@app.route('/table_chart')
+def table_chart():  
+    data = dict(
+        dates=[date(2014, 3, i+1) for i in range(20)],
+        downloads=[randint(0, 100) for i in range(20)],
+    )
+    source = ColumnDataSource(data)
+
+    columns = [
+        TableColumn(field="dates", title="Date", formatter=DateFormatter()),
+        TableColumn(field="downloads", title="Downloads"),
+    ]
+    data_table = DataTable(source=source, columns=columns, width=800, height=280)
+    return _render_result(data_table)
+
 
 def _render_result(fig):
     # render template

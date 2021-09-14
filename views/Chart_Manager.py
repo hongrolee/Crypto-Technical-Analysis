@@ -1,6 +1,5 @@
 from bokeh.plotting import figure, show
 from bokeh.palettes import Spectral11
-from bokeh.io.output import output_file
 from bokeh.io import show
 from bokeh.sampledata.stocks import AAPL, GOOG, IBM, MSFT
 
@@ -59,8 +58,7 @@ def create_figure(title="", plot_height=None, tools="no"):
     return f
 
 
-def show_tab_chart(coins_list, coins_name, kind_of_price, file_name, title):
-    output_file(file_name)
+def get_tab_chart(coins_list, coins_name, kind_of_price, file_name, title):
     panels = []
     for data, name, color in zip(coins_list, coins_name, Spectral11):
         f = create_figure(title)
@@ -75,11 +73,10 @@ def show_tab_chart(coins_list, coins_name, kind_of_price, file_name, title):
         panel = Panel(child=f, title=name)
         panels.append(panel)
     tabs = Tabs(tabs=panels)
-    show(tabs)
+    return tabs
 
 
-def show_one_chart(coins_list, coins_name, kind_of_price, file_name, title):
-    output_file(file_name)
+def get_one_chart(coins_list, coins_name, kind_of_price, file_name, title):
 
     f = create_figure(title)
 
@@ -92,21 +89,20 @@ def show_one_chart(coins_list, coins_name, kind_of_price, file_name, title):
         f.legend.title = title
         f.legend.title_text_font_style = "bold"
         f.legend.title_text_font_size = "20px"
-    show(f)
+    return f
 
 
-def show_candlestick_tab_chart(coins_list, coins_name, file_name, title, arrow_list):
-    output_file(file_name)
+def get_candlestick_tab_chart(coins_list, coins_name, file_name, title, arrow_list):
     panels = []
     for data, name, color, arrow in zip(coins_list, coins_name, Spectral11, arrow_list):
-        f = get_backtesting_dashboard(data, title, arrow)
+        f = _get_backtesting_dashboard(data, title, arrow)
         panel = Panel(child=f, title=name)
         panels.append(panel)
 
     tabs = Tabs(tabs=panels)
-    show(tabs)
+    return tabs
 
-def get_backtesting_dashboard(data, title, arrow):
+def _get_backtesting_dashboard(data, title, arrow):
 
     df = pd.DataFrame(data)[:]
     f = create_figure(title+" Coin", tools="yes")
@@ -206,8 +202,7 @@ def get_backtesting_dashboard(data, title, arrow):
     return all_chart
 
 
-def show_candlestick_one_chart(data, file_name, title):
-    output_file(file_name)
+def get_candlestick_one_chart(data, file_name, title):
 
     df = pd.DataFrame(data)[:]
 
@@ -231,8 +226,7 @@ def show_candlestick_one_chart(data, file_name, title):
     return f
 
 
-def show_candlestick_one_chart_with_volume(data, file_name, title):
-    output_file(file_name)
+def get_candlestick_one_chart_with_volume(data, file_name, title):
     df = pd.DataFrame(data)[:200]
 
     f = create_figure(title)
@@ -262,12 +256,10 @@ def show_candlestick_one_chart_with_volume(data, file_name, title):
 
     p = gridplot([[f], [p_volumechart]], toolbar_location="left")
 
-    show(p)
+    return p
 
-def load_ticker(tickers, START, END):
-    df = yf.download(tickers, start=START, end=END)
-    print(df)
-    return df("close")
+# def load_ticker(tickers, START, END):
+#     df = yf.download(tickers, start=START, end=END)
+#     print(df)
+#     return df("close")
 
-def show_dashboard():
-    pass
