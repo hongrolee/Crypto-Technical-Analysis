@@ -1,11 +1,12 @@
 
-from flask import Flask, render_template
+from flask import Flask, render_template, request
 from flask_bootstrap import Bootstrap
 
 from views import Chart_Manager
-from models import API_BITHUMB, patterns
-from process import Technical_Indicator, BackTesting
+from models import API_BITHUMB
+from models.patterns import patterns
 from models.API_UPBIT import Quotation
+from process import Technical_Indicator, BackTesting
 
 from datetime import date
 from random import randint
@@ -14,6 +15,10 @@ from bokeh.embed import components
 from bokeh.resources import INLINE
 from bokeh.models import ColumnDataSource, DataTable, DateFormatter, TableColumn
 
+import os
+import yfinance as yf
+import pandas as pd
+
 app = Flask(__name__)
 bootstrap = Bootstrap(app)
 
@@ -21,8 +26,26 @@ bootstrap = Bootstrap(app)
 def index():
     return render_template('index.html')
 
+@app.route('/snapshot')
+def snapshot():
+    with open('datasets/stock_companies.csv') as f:
+        companies = f.read().splitlines()
+        for company in companies:
+            symbol = company.split(',')[0]
+            df = yf.download(symbol, start="2020-01-01", end="2020-08-01")
+            df.to_csv('datasets/daily/{}.csv'.format(symbol))
+    return {
+        'code':'success'
+    }
+
 @app.route('/recommend_pattern')
 def recommend_pattern():
+    pattern = request.args.get('pattern', None)
+    if pattern:
+        datafiles = os.listdir('datasets/daily')
+        for filename in datafiles:
+            df = pd.read_csv('datasets/daily/{}'.format(filename))
+            print(df)
     return render_template('recommend_pattern.html', patterns=patterns)
 
 @app.route('/backtesting')
