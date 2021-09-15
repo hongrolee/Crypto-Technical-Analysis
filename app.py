@@ -15,9 +15,10 @@ from bokeh.embed import components
 from bokeh.resources import INLINE
 from bokeh.models import ColumnDataSource, DataTable, DateFormatter, TableColumn
 
-import os
+import os, csv
 import yfinance as yf
 import pandas as pd
+import talib
 
 app = Flask(__name__)
 bootstrap = Bootstrap(app)
@@ -38,15 +39,37 @@ def snapshot():
         'code':'success'
     }
 
-@app.route('/recommend_pattern')
+@app.route('/stocks_recommend_pattern')
 def recommend_pattern():
     pattern = request.args.get('pattern', None)
+    stocks = {}
+
+    with open('datasets/stock_companies.csv') as f:
+        for row in csv.reader(f):
+            stocks[row[0]]={'company': row[1]}
+
     if pattern:
         datafiles = os.listdir('datasets/daily')
         for filename in datafiles:
-            df = pd.read_csv('datasets/daily/{}'.format(filename))
-            print(df)
-    return render_template('recommend_pattern.html', patterns=patterns)
+            df = pd.read_csv('datasets/daily/{}'.format(filename))            
+            pattern_function = getattr(talib, pattern)
+            symbol = filename.split('.')[0]
+            
+            try :
+                result = pattern_function(df['Open'], df['High'], df['Low'], df['Close'])                
+                last = result.tail(1).values[0]
+                # print(last)
+                if last > 0:
+                    stocks[symbol][pattern] = 'bullish'
+                elif last < 0:
+                    stocks[symbol][pattern] = 'bearish'
+                else:
+                    stocks[symbol][pattern] = None
+            except:
+                pass          
+
+    return render_template('recommend_pattern.html', patterns=patterns, stocks=stocks, current_pattern=pattern)
+
 
 @app.route('/backtesting')
 def backtesting():   
