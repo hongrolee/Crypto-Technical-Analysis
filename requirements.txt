@@ -1,0 +1,9 @@
+pyupbit
+flask
+flask_bootstrap
+bokeh
+yfinance
+pandas
+TA
+TAlib
+
