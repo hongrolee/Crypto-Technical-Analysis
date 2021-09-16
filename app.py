@@ -17,6 +17,7 @@ from bokeh.models import ColumnDataSource, DataTable, DateFormatter, TableColumn
 
 import os, csv
 import yfinance as yf
+from yahoofinancials import YahooFinancials
 import pandas as pd
 import talib
 
@@ -27,31 +28,31 @@ bootstrap = Bootstrap(app)
 def index():
     return render_template('index.html')
 
-@app.route('/snapshot')
-def snapshot():
-    with open('datasets/stock_companies.csv') as f:
+@app.route('/snapshot_stock')
+def snapshot_stock():
+    with open('datasets_stock/stock_companies.csv') as f:
         companies = f.read().splitlines()
         for company in companies:
             symbol = company.split(',')[0]
-            df = yf.download(symbol, start="2020-01-01", end="2020-08-01")
+            df = yf.download(symbol, start="2021-01-01", end="2021-09-15")
             df.to_csv('datasets/daily/{}.csv'.format(symbol))
     return {
         'code':'success'
     }
 
-@app.route('/stocks_recommend_pattern')
-def recommend_pattern():
+@app.route('/recommend_pattern_stock')
+def recommend_pattern_stock():
     pattern = request.args.get('pattern', None)
     stocks = {}
 
-    with open('datasets/stock_companies.csv') as f:
+    with open('datasets_stock/stock_companies.csv') as f:
         for row in csv.reader(f):
             stocks[row[0]]={'company': row[1]}
 
     if pattern:
-        datafiles = os.listdir('datasets/daily')
+        datafiles = os.listdir('datasets_stock/daily')
         for filename in datafiles:
-            df = pd.read_csv('datasets/daily/{}'.format(filename))            
+            df = pd.read_csv('datasets_stock/daily/{}'.format(filename))            
             pattern_function = getattr(talib, pattern)
             symbol = filename.split('.')[0]
             
@@ -68,7 +69,65 @@ def recommend_pattern():
             except:
                 pass          
 
-    return render_template('recommend_pattern.html', patterns=patterns, stocks=stocks, current_pattern=pattern)
+    return render_template('recommend_pattern_stock.html', patterns=patterns, stocks=stocks, current_pattern=pattern)
+
+
+@app.route('/snapshot_crypto')
+def snapshot_crypto():
+    with open('datasets_crypto/crypto_companies.csv') as f:
+        tickers = f.read().splitlines()
+        for oneLine in tickers:
+            ticker = oneLine.split(',')[0]                        
+            yahoo_financials = YahooFinancials(ticker+"-USD")
+            data = yahoo_financials.get_historical_price_data(start_date='2019-01-01', 
+                                                              end_date='2019-12-31', 
+                                                              time_interval='weekly')                            
+            df = pd.DataFrame(data[ticker+"-USD"]['prices'])            
+            df.rename(columns={
+                "date":"raw_date",
+                "high":"High",
+                "low":"Low",
+                "open":"Open",
+                "close":"Close",
+                "volume":"Volume",
+                "formatted_date":"Date"},inplace=True)            
+            df.to_csv('datasets_crypto/daily/{}.csv'.format(ticker))
+
+    return {
+        'code':'success'
+    }
+
+
+@app.route('/recommend_pattern_crypto')
+def recommend_pattern_crypto():
+    pattern = request.args.get('pattern', None)
+    stocks = {}
+
+    with open('datasets_crypto/crypto_companies.csv') as f:
+        for row in csv.reader(f):
+            stocks[row[0]]={'company': row[1]}
+
+    if pattern:
+        datafiles = os.listdir('datasets_crypto/daily')
+        for filename in datafiles:
+            df = pd.read_csv('datasets_crypto/daily/{}'.format(filename))            
+            pattern_function = getattr(talib, pattern)
+            symbol = filename.split('.')[0]
+            
+            try :
+                result = pattern_function(df['Open'], df['High'], df['Low'], df['Close'])                
+                last = result.tail(1).values[0]
+                # print(last)
+                if last > 0:
+                    stocks[symbol][pattern] = 'bullish'
+                elif last < 0:
+                    stocks[symbol][pattern] = 'bearish'
+                else:
+                    stocks[symbol][pattern] = None
+            except:
+                pass          
+
+    return render_template('recommend_pattern_crypto.html', patterns=patterns, stocks=stocks, current_pattern=pattern)
 
 
 @app.route('/backtesting')
