@@ -30,7 +30,7 @@ def index():
 
 @app.route('/snapshot_stock')
 def snapshot_stock():
-    with open('datasets_stock/stock_companies.csv') as f:
+    with open('datasets_stock/companies_stock.csv') as f:
         companies = f.read().splitlines()
         for company in companies:
             symbol = company.split(',')[0]
@@ -40,41 +40,9 @@ def snapshot_stock():
         'code':'success'
     }
 
-@app.route('/recommend_pattern_stock')
-def recommend_pattern_stock():
-    pattern = request.args.get('pattern', None)
-    stocks = {}
-
-    with open('datasets_stock/stock_companies.csv') as f:
-        for row in csv.reader(f):
-            stocks[row[0]]={'company': row[1]}
-
-    if pattern:
-        datafiles = os.listdir('datasets_stock/daily')
-        for filename in datafiles:
-            df = pd.read_csv('datasets_stock/daily/{}'.format(filename))            
-            pattern_function = getattr(talib, pattern)
-            symbol = filename.split('.')[0]
-            
-            try :
-                result = pattern_function(df['Open'], df['High'], df['Low'], df['Close'])                
-                last = result.tail(1).values[0]
-                # print(last)
-                if last > 0:
-                    stocks[symbol][pattern] = 'bullish'
-                elif last < 0:
-                    stocks[symbol][pattern] = 'bearish'
-                else:
-                    stocks[symbol][pattern] = None
-            except:
-                pass          
-
-    return render_template('recommend_pattern_stock.html', patterns=patterns, stocks=stocks, current_pattern=pattern)
-
-
 @app.route('/snapshot_crypto')
-def snapshot_crypto():
-    with open('datasets_crypto/crypto_companies.csv') as f:
+def snapshot_crypto():    
+    with open('datasets_crypto/companies_crypto.csv') as f:
         tickers = f.read().splitlines()
         for oneLine in tickers:
             ticker = oneLine.split(',')[0]                        
@@ -98,36 +66,35 @@ def snapshot_crypto():
     }
 
 
-@app.route('/recommend_pattern_crypto')
-def recommend_pattern_crypto():
+@app.route('/recommend_pattern')
+def recommend_pattern():
+    type = request.args.get('type', None)
     pattern = request.args.get('pattern', None)
-    stocks = {}
-
-    with open('datasets_crypto/crypto_companies.csv') as f:
-        for row in csv.reader(f):
-            stocks[row[0]]={'company': row[1]}
+    stocks = {}        
 
     if pattern:
-        datafiles = os.listdir('datasets_crypto/daily')
+        companies_file_name = 'companies_'+type+'.csv'        
+        with open('datasets_'+type+'/'+companies_file_name) as f:
+            for row in csv.reader(f):
+                stocks[row[0]]={'company': row[1]}
+
+        datafiles = os.listdir('datasets_'+type+'/daily')
         for filename in datafiles:
-            df = pd.read_csv('datasets_crypto/daily/{}'.format(filename))            
+            df = pd.read_csv('datasets_'+type+'/daily/{}'.format(filename))            
             pattern_function = getattr(talib, pattern)
-            symbol = filename.split('.')[0]
-            
+            symbol = filename.split('.')[0]            
             try :
                 result = pattern_function(df['Open'], df['High'], df['Low'], df['Close'])                
-                last = result.tail(1).values[0]
-                # print(last)
+                last = result.tail(1).values[0]                
                 if last > 0:
-                    stocks[symbol][pattern] = 'bullish'
+                    stocks[symbol][pattern] = '강세'
                 elif last < 0:
-                    stocks[symbol][pattern] = 'bearish'
+                    stocks[symbol][pattern] = '약세'
                 else:
                     stocks[symbol][pattern] = None
             except:
                 pass          
-
-    return render_template('recommend_pattern_crypto.html', patterns=patterns, stocks=stocks, current_pattern=pattern)
+    return render_template('recommend_pattern.html', patterns=patterns, stocks=stocks, current_pattern=pattern, type=type)
 
 
 @app.route('/backtesting')
