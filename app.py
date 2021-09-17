@@ -17,6 +17,7 @@ from bokeh.models import ColumnDataSource, DataTable, DateFormatter, TableColumn
 
 import os, csv
 import yfinance as yf
+from yahoofinancials import YahooFinancials
 import pandas as pd
 import talib
 
@@ -27,48 +28,73 @@ bootstrap = Bootstrap(app)
 def index():
     return render_template('index.html')
 
-@app.route('/snapshot')
-def snapshot():
-    with open('datasets/stock_companies.csv') as f:
+@app.route('/snapshot_stock')
+def snapshot_stock():
+    with open('datasets_stock/companies_stock.csv') as f:
         companies = f.read().splitlines()
         for company in companies:
             symbol = company.split(',')[0]
-            df = yf.download(symbol, start="2020-01-01", end="2020-08-01")
+            df = yf.download(symbol, start="2021-01-01", end="2021-09-15")
             df.to_csv('datasets/daily/{}.csv'.format(symbol))
     return {
         'code':'success'
     }
 
-@app.route('/stocks_recommend_pattern')
-def recommend_pattern():
-    pattern = request.args.get('pattern', None)
-    stocks = {}
+@app.route('/snapshot_crypto')
+def snapshot_crypto():    
+    with open('datasets_crypto/companies_crypto.csv') as f:
+        tickers = f.read().splitlines()
+        for oneLine in tickers:
+            ticker = oneLine.split(',')[0]                        
+            yahoo_financials = YahooFinancials(ticker+"-USD")
+            data = yahoo_financials.get_historical_price_data(start_date='2019-01-01', 
+                                                              end_date='2019-12-31', 
+                                                              time_interval='weekly')                            
+            df = pd.DataFrame(data[ticker+"-USD"]['prices'])            
+            df.rename(columns={
+                "date":"raw_date",
+                "high":"High",
+                "low":"Low",
+                "open":"Open",
+                "close":"Close",
+                "volume":"Volume",
+                "formatted_date":"Date"},inplace=True)            
+            df.to_csv('datasets_crypto/daily/{}.csv'.format(ticker))
 
-    with open('datasets/stock_companies.csv') as f:
-        for row in csv.reader(f):
-            stocks[row[0]]={'company': row[1]}
+    return {
+        'code':'success'
+    }
+
+
+@app.route('/recommend_pattern')
+def recommend_pattern():
+    type = request.args.get('type', None)
+    pattern = request.args.get('pattern', None)
+    stocks = {}        
 
     if pattern:
-        datafiles = os.listdir('datasets/daily')
+        companies_file_name = 'companies_'+type+'.csv'        
+        with open('datasets_'+type+'/'+companies_file_name) as f:
+            for row in csv.reader(f):
+                stocks[row[0]]={'company': row[1]}
+
+        datafiles = os.listdir('datasets_'+type+'/daily')
         for filename in datafiles:
-            df = pd.read_csv('datasets/daily/{}'.format(filename))            
+            df = pd.read_csv('datasets_'+type+'/daily/{}'.format(filename))            
             pattern_function = getattr(talib, pattern)
-            symbol = filename.split('.')[0]
-            
+            symbol = filename.split('.')[0]            
             try :
                 result = pattern_function(df['Open'], df['High'], df['Low'], df['Close'])                
-                last = result.tail(1).values[0]
-                # print(last)
+                last = result.tail(1).values[0]                
                 if last > 0:
-                    stocks[symbol][pattern] = 'bullish'
+                    stocks[symbol][pattern] = '강세'
                 elif last < 0:
-                    stocks[symbol][pattern] = 'bearish'
+                    stocks[symbol][pattern] = '약세'
                 else:
                     stocks[symbol][pattern] = None
             except:
                 pass          
-
-    return render_template('recommend_pattern.html', patterns=patterns, stocks=stocks, current_pattern=pattern)
+    return render_template('recommend_pattern.html', patterns=patterns, stocks=stocks, current_pattern=pattern, type=type)
 
 
 @app.route('/backtesting')
