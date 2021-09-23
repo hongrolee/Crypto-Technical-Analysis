@@ -87,9 +87,9 @@ def recommend_pattern():
                 result = pattern_function(df['Open'], df['High'], df['Low'], df['Close'])                
                 last = result.tail(1).values[0]                
                 if last > 0:
-                    stocks[symbol][pattern] = '강세'
+                    stocks[symbol][pattern] = 'Bullish'
                 elif last < 0:
-                    stocks[symbol][pattern] = '약세'
+                    stocks[symbol][pattern] = 'Bearish'
                 else:
                     stocks[symbol][pattern] = None
             except:

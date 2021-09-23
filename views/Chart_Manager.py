@@ -6,12 +6,12 @@ from bokeh.sampledata.stocks import AAPL, GOOG, IBM, MSFT
 import numpy as np
 import pandas as pd
 import yfinance as yf
-from bokeh.models import Tabs, Panel
 
 from bokeh.layouts import gridplot, layout, column, row
 from bokeh.models.formatters import NumeralTickFormatter
 from bokeh.models import FreehandDrawTool, Arrow, VeeHead, NormalHead, ArrowHead, BoxAnnotation, Toggle, MultiSelect, \
-    CustomJS, Dropdown, PolyDrawTool
+    CustomJS, Dropdown, PolyDrawTool, Tabs, Panel
+
 
 
 def create_figure(title="", plot_height=None, tools="no"):
@@ -21,7 +21,7 @@ def create_figure(title="", plot_height=None, tools="no"):
              "ypan,"
              "pan,"
              "xwheel_pan,"             
-             "xwheel_zoom,"             
+             "wheel_zoom,"             
              "box_zoom,"
              "hover,"
              "zoom_in,"
@@ -45,8 +45,8 @@ def create_figure(title="", plot_height=None, tools="no"):
         tooltips=TOOLTIPS,
         tools=TOOLS,
         title=title,
-        active_scroll="xwheel_zoom",
-        active_drag="xpan",
+         active_scroll="wheel_zoom",
+        active_drag="pan",
         toolbar_location = "right",
     )
     if plot_height != None:
@@ -109,17 +109,18 @@ def _get_backtesting_dashboard(data, title, arrow):
 
     inc = df.close >= df.open
     dec = df.open > df.close
+    w = 30*60*1000
 
-    f.segment(df.index[inc], df.high[inc], df.index[inc], df.low[inc], color="crimson")
-    f.segment(df.index[dec], df.high[dec], df.index[dec], df.low[dec], color="mediumblue")
-    f.vbar(df.index[inc], 0.5, df.open[inc], df.close[inc], fill_color="crimson", line_color="crimson")
-    f.vbar(df.index[dec], 0.5, df.open[dec], df.close[dec], fill_color="mediumblue", line_color="mediumblue")
-    f.yaxis[0].formatter = NumeralTickFormatter(format='0,0')
-    major_label = {
-        i: date.strftime('%Y.%m.%d') for i, date in enumerate(pd.to_datetime(df["date"]))
-    }
-    # major_label.update({len(df):''})
-    f.xaxis.major_label_overrides = major_label
+    f.segment(df.date[inc], df.high[inc], df.date[inc], df.low[inc], color="crimson")
+    f.segment(df.date[dec], df.high[dec], df.date[dec], df.low[dec], color="mediumblue")
+    f.vbar(df.date[inc], w, df.open[inc], df.close[inc], fill_color="crimson", line_color="crimson")
+    f.vbar(df.date[dec], w, df.open[dec], df.close[dec], fill_color="mediumblue", line_color="mediumblue")
+    # f.yaxis[0].formatter = NumeralTickFormatter(format='0,0')
+    # major_label = {
+    #     i: date.strftime('%Y.%m.%d') for i, date in enumerate(pd.to_datetime(df["date"]))
+    # }
+    # # major_label.update({len(df):''})
+    # f.xaxis.major_label_overrides = major_label
     f.xaxis.major_label_orientation = "horizontal"  # pi / 4
     f.xaxis.visible = True
     f.grid.grid_line_alpha = 1.0
@@ -164,15 +165,15 @@ def _get_backtesting_dashboard(data, title, arrow):
     p = create_figure(title+" RSI", plot_height=200)
     p.toolbar_location = None
     p.x_range = f.x_range
-    p.line(df.index, df.RSI, line_width=2, color="blue", alpha=1.0, legend_label="RSI")
-    p.line(df.index, 70, line_width=1, color="red", alpha=0.5, legend_label="HIGH")
-    p.line(df.index, 30, line_width=1, color="red", alpha=0.5, legend_label="LOW")
+    p.line(df.date, df.RSI, line_width=2, color="blue", alpha=1.0, legend_label="RSI")
+    p.line(df.date, 70, line_width=1, color="darkgreen", alpha=0.5, legend_label="HIGH")
+    p.line(df.date, 30, line_width=1, color="red", alpha=0.5, legend_label="LOW")
     p.legend.location = "top_left"
     p.legend.click_policy = "hide"
     p.legend.title = " "
     p.legend.title_text_font_style = "bold"
     p.legend.title_text_font_size = "20px"
-    p.xaxis.major_label_overrides = major_label
+    # p.xaxis.major_label_overrides = major_label
 
     # add arrows to all spots where the lines are equal
     for i in range(len(arrow)):
@@ -209,10 +210,11 @@ def get_candlestick_one_chart(data, file_name, title):
     f = create_figure(title)
     inc = df.close >= df.open
     dec = df.open > df.close
-    f.segment(df.index[inc], df.high[inc], df.index[inc], df.low[inc], color="red")
-    f.segment(df.index[dec], df.high[dec], df.index[dec], df.low[dec], color="blue")
-    f.vbar(df.index[inc], 0.5, df.open[inc], df.close[inc], fill_color="red", line_color="red")
-    f.vbar(df.index[dec], 0.5, df.open[dec], df.close[dec], fill_color="blue", line_color="blue")
+    w = 30*60*1000
+    f.segment(df.date, df.high, df.date, df.low, color="red")
+    f.segment(df.date, df.high, df.date, df.low, color="blue")
+    f.vbar(df.date[inc], w, df.open[inc], df.close[inc], fill_color="red", line_color="red")
+    f.vbar(df.date[dec], w, df.open[dec], df.close[dec], fill_color="blue", line_color="blue")
     f.yaxis[0].formatter = NumeralTickFormatter(format='0,0')
     major_label = {
         i: date.strftime('%Y년 %m월 %d일') for i, date in enumerate(pd.to_datetime(df["date"]))
@@ -232,10 +234,10 @@ def get_candlestick_one_chart_with_volume(data, file_name, title):
     f = create_figure(title)
     inc = df.close >= df.open
     dec = df.open > df.close
-    f.segment(df.index[inc], df.high[inc], df.index[inc], df.low[inc], color="red")
-    f.segment(df.index[dec], df.high[dec], df.index[dec], df.low[dec], color="blue")
-    f.vbar(df.index[inc], 0.5, df.open[inc], df.close[inc], fill_color="red", line_color="red")
-    f.vbar(df.index[dec], 0.5, df.open[dec], df.close[dec], fill_color="blue", line_color="blue")
+    f.segment(df.date[inc], df.high[inc], df.date[inc], df.low[inc], color="red")
+    f.segment(df.date[dec], df.high[dec], df.date[dec], df.low[dec], color="blue")
+    f.vbar(df.date[inc], 0.5, df.open[inc], df.close[inc], fill_color="red", line_color="red")
+    f.vbar(df.date[dec], 0.5, df.open[dec], df.close[dec], fill_color="blue", line_color="blue")
     f.yaxis[0].formatter = NumeralTickFormatter(format='0,0')
     major_label = {
         i: date.strftime('%Y년 %m월 %d일') for i, date in enumerate(pd.to_datetime(df["date"]))
@@ -248,7 +250,7 @@ def get_candlestick_one_chart_with_volume(data, file_name, title):
 
     p_volumechart = create_figure("거래량 차트")
     p_volumechart.x_range = f.x_range
-    p_volumechart.vbar(df.index, 0.5, df.volume, fill_color="cyan", line_color="blue")
+    p_volumechart.vbar(df.date, 0.5, df.volume, fill_color="cyan", line_color="blue")
     p_volumechart.xaxis.major_label_overrides = major_label
     p_volumechart.xaxis.major_label_orientation ="horizontal"
     p_volumechart.yaxis[0].formatter = NumeralTickFormatter(format='0,0')

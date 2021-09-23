@@ -1,0 +1,35 @@
+#side_left{
+    width:500px;
+    /* height:400px; */
+    /* background-color:yellow; */
+    float:left;
+    margin:5px;
+}
+#side_left_box{
+    width:100%;
+    /* height:45%; */
+    /* background-color:blue; */
+    float:left;
+    margin:0 auto;                
+}
+#mid_content{
+    width:400px;
+    height:400px;
+    /* background-color:green; */
+    float:left;
+    margin:5px;
+}            
+
+table.txc-table {
+    width:100%;
+    table-layout:fixed;
+}
+table thread tr {
+    width:100%;
+}
+
+body { font-family: 맑은고딕; margin: 20px;  font-weight: 900; border: 10; text-align: center;}
+th, td { padding: 10px; border: 2px solid #444444; border-color:gray; text-align: center;}
+table { border: 1px solid #444444;}
+.Bullish { background: rgb(6, 173, 0); color: white;}
+.Bearish { background: red; color: white;}      

@@ -3,7 +3,7 @@
     <head>        
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title> Pattern Recognition </title>                
+        <title> 패턴 분석 </title>                
         
         <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css">
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-select@1.13.14/dist/css/bootstrap-select.min.css">
@@ -26,30 +26,26 @@
                     {% else %}
                         <input type="radio" name="type" value="stock" checked="checked" /> STOCK
                         <input type="radio" name="type" value="crypto" /> CRYPTO
-                    {% endif %}                                        
+                    {% endif %}          
+                    <input type="submit" value="scan"/>          
                 </div>
                 <div id = "side_left_box">
                     <div class="search_select_box">
                         <select name="pattern" data-live-search="true" size=40>                    
                             {% for pattern in patterns %}
-                                {% if pattern[0]=="@" %}
-                                    <optgroup label="[{{pattern[1:]}}]">
-                                {% else %}    
-                                    <option value="{{pattern}}" {% if pattern == current_pattern %} selected ="selected" {% endif %}> {{patterns[pattern]}}</option>
-                                {% endif %}
+                                <option value="{{pattern}}" {% if pattern == current_pattern %} selected ="selected" {% endif %}> {{patterns[pattern]}}</option>
                             {% endfor %}                    
                         </select>                                
-                        <input type="submit" value="scan"/>
-                    </div>                    
-                </div>
+                    </div>
+                </div>                  
             </form>
         </div>
         <div id="mid_content">
             <table>
                 <tr>
-                    <th> Finance Name </th>
-                    <th> Company Name </th>
-                    <th> Signal Strength </th>
+                    <th> 금융명 </th>
+                    <th> 회사 이름 </th>
+                    <th> 신호세기 </th>
                 </tr>
                 {% for stock in stocks %}
                     {% if stocks[stock][current_pattern] %}   
